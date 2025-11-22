@@ -1,29 +1,33 @@
 import express from "express";
 import path from "path";
-import {ENV} from "./lib/env.js";
+import { ENV } from "./lib/env.js";
 
 const app = express();
 
-const __dirname = path.resolve();
+// middlewares (add more as you need)
+app.use(express.json());
 
-app.get("/jaiswal", (req,res) => {
-    res.status(200).json({msg:"This is from jaiswal's"})
-})
+// just to test backend root
+app.get("/", (req, res) => {
+  res.send("TalentBridge backend is running 🚀");
+});
 
-app.get("/pratyush", (req,res) => {
-    res.status(200).json({msg:"Pratyush is UP and WORKING!!!!!"})
-})
+// your test routes
+app.get("/jaiswal", (req, res) => {
+  res.status(200).json({ msg: "This is from jaiswal's" });
+});
 
-//make ready for deployment
-if(ENV.NODE_ENV === "production"){
-    app.use(express.static(path.join(__dirname,"../frontend/dist")))
+app.get("/pratyush", (req, res) => {
+  res
+    .status(200)
+    .json({ msg: "Pratyush is UP and WORKING!!!!!" });
+});
 
-    app.get("/{*any}", (req,res) => {
-        res.sendFile((path.join(__dirname,"../frontend","dist","index.html")));
-    });
-}
+// ❌ IMPORTANT: no express.static, no frontend/dist, no index.html here
 
+// Port – make sure Render can override it
+const PORT = ENV.PORT || process.env.PORT || 5000;
 
-app.listen(ENV.PORT, () => console.log("Server is running on port:",ENV.PORT));
-
-
+app.listen(PORT, () => {
+  console.log("Server is running on port:", PORT);
+});
