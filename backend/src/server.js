@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import { ENV } from "./lib/env.js";
+import { connectDB } from "./lib/db.js";
+
 
 const app = express();
 
@@ -31,5 +33,15 @@ app.get("/pratyush", (req, res) => {
 });
 
 // port config
-const PORT = ENV.PORT || process.env.PORT || 5000;
-app.listen(PORT, () => console.log("Server is running on port:", PORT));
+const PORT = ENV.PORT || process.env.PORT || 3000;
+
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => console.log("Server is running on PORT : ", PORT));
+  }catch (error){
+    console.error("❌ Error starting the server",error)
+  }
+};
+
+startServer();
