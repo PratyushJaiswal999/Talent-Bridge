@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { ENV } from "./lib/env.js";
 import { connectDB } from "./lib/db.js";
+import {serve} from "inngest/express";
 
 
 const app = express();
@@ -16,6 +17,13 @@ app.use(
 );
 
 app.use(express.json());
+
+// middlewares
+app.use(express.json())
+app.use(cors({origin:ENV.CLIENT_URL,credentials:true}))
+
+
+app.use("api/inngest",server({client:inngest,functions}))
 
 // test routes
 app.get("/", (req, res) => {
