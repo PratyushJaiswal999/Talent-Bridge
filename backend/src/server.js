@@ -45,9 +45,11 @@ app.use(clerkMiddleware()); // this adds auth field to request objects : req.aut
 
 
 
-app.use("/api/inngest",serve({client:inngest,functions}))
-app.use("/api/chat",chatRoutes)
-app.use("/api/sessions",sessionRoutes)
+app.use("/api/inngest", serve({ client: inngest, functions }));
+
+// 👇 protect all chat + session endpoints with Clerk auth
+app.use("/api/chat", protectRoute, chatRoutes);
+app.use("/api/sessions", protectRoute, sessionRoutes);
 
 // test routes
 app.get("/", (req, res) => {
