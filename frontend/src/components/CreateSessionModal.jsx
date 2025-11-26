@@ -73,7 +73,7 @@ function CreateSessionModal({
 
           <button
             className="btn btn-primary gap-2"
-            onClick={onCreateRoom}
+            onClick={() => onCreateRoom(roomConfig)}
             disabled={isCreating || !roomConfig.problem}
           >
             {isCreating ? (
