@@ -1,7 +1,6 @@
 import axiosInstance from "../lib/axios";
 
 export const sessionApi = {
-  // data = payload, token = Clerk JWT
   createSession: async (data, token) => {
     const response = await axiosInstance.post("/sessions", data, {
       headers: {
@@ -64,6 +63,7 @@ export const sessionApi = {
     return response.data;
   },
 
+  // used for /api/chat/token
   getStreamToken: async (token) => {
     const response = await axiosInstance.get("/chat/token", {
       headers: {
