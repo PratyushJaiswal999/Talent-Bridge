@@ -48,6 +48,8 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         setStreamClient(client);
 
         videoCall = client.call("default", session.callId);
+        await videoCall.camera.enable();
+        await videoCall.microphone.enable();
         await videoCall.join({ create: true });
         setCall(videoCall);
 
