@@ -98,23 +98,32 @@ export async function joinSession(req, res) {
     const userId = req.user._id;
     const clerkId = req.user.clerkId;
 
-    const session = await Session.findById(id);
+    // atomic join using findOneAndUpdate to prevent race conditions
+    const session = await Session.findOneAndUpdate(
+      {
+        _id: id,
+        status: "active",
+        participant: null,
+        host: { $ne: userId },
+      },
+      { $set: { participant: userId } },
+      { new: true }
+    );
 
-    if (!session) return res.status(404).json({ message: "Session not found" });
+    if (!session) {
+      // atomic join failed, identify reason for specific error message
+      const checkSession = await Session.findById(id);
+      if (!checkSession) return res.status(404).json({ message: "Session not found" });
+      if (checkSession.status !== "active") {
+        return res.status(400).json({ message: "Cannot join a completed session" });
+      }
+      if (checkSession.host.toString() === userId.toString()) {
+        return res.status(400).json({ message: "Host cannot join their own session as participant" });
+      }
+      if (checkSession.participant) return res.status(409).json({ message: "Session is full" });
 
-    if (session.status !== "active") {
-      return res.status(400).json({ message: "Cannot join a completed session" });
+      return res.status(500).json({ message: "Internal Server Error" });
     }
-
-    if (session.host.toString() === userId.toString()) {
-      return res.status(400).json({ message: "Host cannot join their own session as participant" });
-    }
-
-    // check if session is already full - has a participant
-    if (session.participant) return res.status(409).json({ message: "Session is full" });
-
-    session.participant = userId;
-    await session.save();
 
     const channel = chatClient.channel("messaging", session.callId);
     await channel.addMembers([clerkId]);

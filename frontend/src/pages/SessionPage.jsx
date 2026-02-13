@@ -15,12 +15,24 @@ import useStreamClient from "../hooks/useStreamClient";
 import { StreamCall, StreamVideo } from "@stream-io/video-react-sdk";
 import VideoCallUI from "../components/VideoCallUI";
 
+import * as Y from "yjs";
+import { WebrtcProvider } from "y-webrtc";
+import { useMemo } from "react";
+
 function SessionPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useUser();
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+
+  // setup Yjs for real-time code collaboration
+  const ydoc = useMemo(() => new Y.Doc(), []);
+  const provider = useMemo(() => {
+    const p = new WebrtcProvider(id, ydoc);
+    return p;
+  }, [id, ydoc]);
+  const ytext = ydoc.getText("monaco");
 
   const { data: sessionData, isLoading: loadingSession, refetch } = useSessionById(id);
 
@@ -44,7 +56,23 @@ function SessionPage() {
     : null;
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
+
+  // Listen for real-time events from other participants
+  useEffect(() => {
+    if (!channel) return;
+
+    const handleEvent = (event) => {
+      if (event.type === "code-execution") {
+        setOutput(event.data.result);
+        setIsRunning(event.data.isRunning);
+      } else if (event.type === "language-change") {
+        setSelectedLanguage(event.data.language);
+      }
+    };
+
+    channel.on(handleEvent);
+    return () => channel.off(handleEvent);
+  }, [channel]);
 
   // auto-join session if user is not already a participant and not the host
   useEffect(() => {
@@ -65,17 +93,27 @@ function SessionPage() {
 
   // update code when problem loads or changes
   useEffect(() => {
-    if (problemData?.starterCode?.[selectedLanguage]) {
-      setCode(problemData.starterCode[selectedLanguage]);
+    if (problemData?.starterCode?.[selectedLanguage] && ytext.toString() === "") {
+      ytext.insert(0, problemData.starterCode[selectedLanguage]);
     }
-  }, [problemData, selectedLanguage]);
+  }, [problemData, selectedLanguage, ytext]);
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     setSelectedLanguage(newLang);
-    // use problem-specific starter code
+
+    // Broadcast language change to other participants
+    channel?.sendEvent({
+      type: "language-change",
+      data: { language: newLang },
+    });
+
+    // use problem-specific starter code if ytext is empty or if user confirms reset
     const starterCode = problemData?.starterCode?.[newLang] || "";
-    setCode(starterCode);
+    if (confirm("Reset code to starter template for the new language?")) {
+      ytext.delete(0, ytext.length);
+      ytext.insert(0, starterCode);
+    }
     setOutput(null);
   };
 
@@ -83,13 +121,27 @@ function SessionPage() {
     setIsRunning(true);
     setOutput(null);
 
-    const result = await executeCode(selectedLanguage, code);
+    // Broadcast that code is starting to run
+    channel?.sendEvent({
+      type: "code-execution",
+      data: { isRunning: true, result: null },
+    });
+
+    const result = await executeCode(selectedLanguage, ytext.toString());
     setOutput(result);
     setIsRunning(false);
+
+    // Broadcast execution result
+    channel?.sendEvent({
+      type: "code-execution",
+      data: { isRunning: false, result },
+    });
   };
 
   const handleEndSession = () => {
     if (confirm("Are you sure you want to end this session? All participants will be notified.")) {
+      // clean up Yjs provider
+      provider.disconnect();
       // this will navigate the HOST to dashboard
       endSessionMutation.mutate(id, { onSuccess: () => navigate("/dashboard") });
     }
@@ -234,11 +286,11 @@ function SessionPage() {
                   <Panel defaultSize={70} minSize={30}>
                     <CodeEditorPanel
                       selectedLanguage={selectedLanguage}
-                      code={code}
                       isRunning={isRunning}
                       onLanguageChange={handleLanguageChange}
-                      onCodeChange={(value) => setCode(value)}
                       onRunCode={handleRunCode}
+                      ytext={ytext}
+                      awareness={provider.awareness}
                     />
                   </Panel>
 

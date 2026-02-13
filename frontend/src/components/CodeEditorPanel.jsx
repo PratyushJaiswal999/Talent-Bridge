@@ -1,15 +1,33 @@
 import Editor from "@monaco-editor/react";
 import { Loader2Icon, PlayIcon } from "lucide-react";
 import { LANGUAGE_CONFIG } from "../data/problems";
+import { MonacoBinding } from "y-monaco";
+import { useEffect, useRef } from "react";
 
 function CodeEditorPanel({
   selectedLanguage,
-  code,
   isRunning,
   onLanguageChange,
-  onCodeChange,
   onRunCode,
+  ytext,
+  awareness,
 }) {
+  const editorRef = useRef(null);
+
+  const handleEditorDidMount = (editor) => {
+    editorRef.current = editor;
+
+    // Bind Monaco to Yjs
+    const binding = new MonacoBinding(
+      ytext,
+      editor.getModel(),
+      new Set([editor]),
+      awareness
+    );
+
+    return () => binding.destroy();
+  };
+
   return (
     <div className="h-full bg-base-300 flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 bg-base-100 border-t border-base-300">
@@ -47,8 +65,7 @@ function CodeEditorPanel({
         <Editor
           height={"100%"}
           language={LANGUAGE_CONFIG[selectedLanguage].monacoLang}
-          value={code}
-          onChange={onCodeChange}
+          onMount={handleEditorDidMount}
           theme="vs-dark"
           options={{
             fontSize: 16,
