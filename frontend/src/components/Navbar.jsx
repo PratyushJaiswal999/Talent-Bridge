@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router";
 import { BookOpenIcon, LayoutDashboardIcon, SparklesIcon } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
+import ThemeSelector from "./ThemeSelector";
 
 function Navbar() {
   const location = useLocation();
@@ -66,7 +67,8 @@ function Navbar() {
             </div>
           </Link>
 
-          <div className="ml-4 mt-2">
+          <div className="ml-4 mt-2 flex items-center gap-2">
+            <ThemeSelector />
             <UserButton />
           </div>
         </div>

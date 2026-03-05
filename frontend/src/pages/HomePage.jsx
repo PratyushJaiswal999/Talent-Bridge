@@ -9,6 +9,7 @@ import {
   ZapIcon,
 } from "lucide-react";
 import { SignInButton } from "@clerk/clerk-react";
+import ThemeSelector from "../components/ThemeSelector";
 
 function HomePage() {
   return (
@@ -33,14 +34,17 @@ function HomePage() {
             </div>
           </Link>
 
-          {/* AUTH BTN */}
-          <SignInButton mode="modal">
-            <button className="group px-6 py-3 bg-violet-500 hover:bg-white
- rounded-xl text-white hover:text-violet-600 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
-              <span>Get Started</span>
-              <ArrowRightIcon className="size-4 group-hover:translate-x-0.5 transition-transform" />
-            </button>
-          </SignInButton>
+          {/* AUTH BTN & THEME TOGGLE */}
+          <div className="flex items-center gap-4">
+            <ThemeSelector />
+            <SignInButton mode="modal">
+              <button className="group px-6 py-3 bg-violet-500 hover:bg-white
+   rounded-xl text-white hover:text-violet-600 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
+                <span>Get Started</span>
+                <ArrowRightIcon className="size-4 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </SignInButton>
+          </div>
         </div>
       </nav>
 
